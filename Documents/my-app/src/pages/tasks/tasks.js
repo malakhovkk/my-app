@@ -69,7 +69,22 @@ export default function Task() {
     localStorage.setItem("vendorId", e.data.id);
     navigate("../vendors");
   }
-
+  const cellPrepared = (e) => {
+    if (e.rowType === "data") {
+      console.log(e.data);
+      //if (e.column.dataField === "Speed" && e.data.Speed > e.data.SpeedLimit) {
+      if (
+        // e.column.dataField === "code" &&
+        e.data.linkId
+      ) {
+        //e.cellElement.style.cssText = "color: white; background-color: purple";
+        e.rowElement.style.cssText =
+          "color: white; font-width:bold; background-color: purple";
+        // or
+        //e.cellElement.classList.add("my-class");
+      }
+    }
+  };
   return (
     <React.Fragment>
       <h2 className={"content-block"}>Поставщики</h2>
@@ -87,6 +102,7 @@ export default function Task() {
         keyExpr="id"
         width="100%"
         onRowClick={(e) => gotoPrice(e)}
+        // onRowPrepared={cellPrepared}
       >
         <Paging defaultPageSize={10} />
         <Pager

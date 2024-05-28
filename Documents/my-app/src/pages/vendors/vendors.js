@@ -11,9 +11,14 @@ import { GroupPanel } from "devextreme-react/data-grid";
 import axios from "axios";
 import "./vendors.css";
 import { useNavigate } from "react-router-dom";
-
+import { Tabs } from "devextreme-react";
+import SelectBox, { SelectBoxTypes } from "devextreme-react/select-box";
+import TextBox, { TextBoxTypes } from "devextreme-react/text-box";
+import { MasterDetail } from "devextreme-react/data-grid";
+import ArrayStore from "devextreme/data/array_store";
+import DataSource from "devextreme/data/data_source";
 export default function Vendors() {
-  const [src, setSrc] = useState([]);
+  const [src, setSrc] = useState(null);
   const [arrName, setObjName] = useState({});
   useEffect(() => {
     async function fetchData() {
@@ -60,7 +65,9 @@ export default function Vendors() {
   }, []);
   const navigate = useNavigate();
   function gotoPrice(e) {
-    alert(2);
+    console.log(e);
+    setCur(e.data.id + "::" + e.data.name + "::" + e.data.quant * e.data.price);
+
     // console.log(e);
     // localStorage.getItem("vendorId", e.data.id);
     // navigate("../vendors");
@@ -79,40 +86,472 @@ export default function Vendors() {
   console.log(src?.profile?.columns);
   const columns =
     src &&
-    src.profile.columns.map((column) => (
+    src.profile.columns.map((column, idx) => (
       <Column
         dataField={column.code}
         width={190}
         caption={column.name}
-        hidingPriority={1}
+        hidingPriority={idx}
       />
     ));
+  // const onSelectionChanged = ({ selectedRowsData }) => {
+  //   const data = selectedRowsData[0];
+  //   setShowEmployeeInfo(!!data);
+  //   setSelectedRowNotes(data && data.Notes);
+  //   setSelectedRowPicture(data && data.Picture);
+  // };
+
+  const [cart, setCart] = useState({});
+  console.log("cart", cart);
+
+  const cellPrepared = (e) => {
+    if (e.rowType === "data") {
+      console.log(e.data);
+      //if (e.column.dataField === "Speed" && e.data.Speed > e.data.SpeedLimit) {
+
+      if (
+        // e.column.dataField === "code" &&
+        cart.hasOwnProperty(
+          e.data.id + "::" + e.data.name + "::" + e.data.price * e.data.quant
+        )
+      ) {
+        //e.cellElement.style.cssText = "color: white; background-color: purple";
+        e.rowElement.style.cssText =
+          "color: white; font-width:bold; background-color: #DDEC7B";
+        return;
+        // or
+        //e.cellElement.classList.add("my-class");
+      }
+      if (
+        // e.column.dataField === "code" &&
+        e.data.linkId
+      ) {
+        //e.cellElement.style.cssText = "color: white; background-color: purple";
+        e.rowElement.style.cssText =
+          "color: white; font-width:bold; background-color: #b24fb2";
+        // or
+        //e.cellElement.classList.add("my-class");
+      }
+    }
+  };
+  //#b24fb2
+  const [cur, setCur] = useState(null);
+  const operation = (op) => {
+    if (!cur) return;
+    if (op > 0)
+      setCart({
+        ...cart,
+        [cur]: !!!cart[cur] ? 1 : cart[cur] + 1,
+      });
+    else {
+      let _cart = { ...cart };
+      if (!cart.hasOwnProperty(cur)) return;
+      if (cart[cur] <= 1) {
+        delete _cart[cur];
+        setCart(_cart);
+        return;
+      }
+
+      setCart({
+        ...cart,
+        [cur]: !!!cart[cur] && cart[cur] < 1 ? 0 : cart[cur] - 1,
+      });
+    }
+  };
+  console.log(cart);
+  const getCart = () => {
+    let gc = [];
+    for (let k in cart) {
+      // console.log(k, " = ", cart);
+      // res += (
+      //   <div>
+      //     {k} : {cart[k]}
+      //   </div>
+      // );
+      console.log(cart[k]);
+      gc.push({ [k]: cart[k] });
+    }
+    console.log("???", gc);
+    return gc;
+  };
+  const [orderF, setOrderF] = useState(
+    (() => {
+      let gc = [];
+      for (let k in cart) {
+        // console.log(k, " = ", cart);
+        // res += (
+        //   <div>
+        //     {k} : {cart[k]}
+        //   </div>
+        // );
+        console.log(cart[k]);
+        gc.push({ [k]: cart[k] });
+      }
+      console.log("???", gc);
+      return gc;
+    })()
+  );
+  useEffect(() => {
+    let gc = [];
+    for (let k in cart) {
+      // console.log(k, " = ", cart);
+      // res += (
+      //   <div>
+      //     {k} : {cart[k]}
+      //   </div>
+      // );
+      console.log(cart[k]);
+      gc.push({ [k]: cart[k] });
+    }
+    console.log("???", gc);
+    setOrderF(gc);
+    setIsReadyForOrder(true);
+  }, []);
+
+  const tabsText = [
+    {
+      id: 0,
+      text: "Прайс-лист",
+    },
+    {
+      id: 1,
+      text: "Корзина",
+    },
+    {
+      id: 2,
+      text: "Заказы",
+    },
+    // {
+    //   id: 2,
+    //   text: "Clients",
+    // },
+    // {
+    //   id: 3,
+    //   text: "Orders",
+    // },
+    // {
+    //   id: 4,
+    //   text: "Favorites",
+    // },
+    // {
+    //   id: 5,
+    //   text: "Search",
+    // },
+  ];
+  const [tab, setTab] = useState(0);
+  const changeTab = (e) => {
+    setTab(e.itemData.id);
+    setOrderF(getCart());
+    if (tab === 2) getOrders();
+    if (tab === 1) order();
+  };
+
+  const [isReadyForOrder, setIsReadyForOrder] = useState(false);
+  const [orders, setOrders] = useState([]);
+  const order = async () => {
+    //await axios(``);
+    const config = {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        User: `${localStorage.getItem("login")}`,
+      },
+    };
+    await axios(
+      `http://194.87.239.231:55555/api/shop/${localStorage.getItem(
+        "vendorId"
+      )}`,
+      config
+    ).then((data) => setShops(data.data.map((el) => el.name)));
+
+    await axios(
+      `http://194.87.239.231:55555/api/VendorContact/${localStorage.getItem(
+        "vendorId"
+      )}`,
+      config
+    ).then((data) =>
+      setContacts(
+        data.data.map((el) => ({ id: el.id, name: el.name, price: el.price }))
+      )
+    );
+  };
+  const [ordersAll, setOrdersAll] = useState([]);
+  const getOrders = async () => {
+    const config = {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        User: `${localStorage.getItem("login")}`,
+      },
+    };
+    await axios
+      .get(
+        `http://194.87.239.231:55555/api/order/${localStorage.getItem(
+          "vendorId"
+        )}?orderid=${localStorage.getItem("orderId")}`,
+        config
+      )
+      .then((data) => {
+        setOrdersAll(
+          data.data.map((order) => {
+            return order;
+          })
+        );
+      });
+  };
+  //console.log(">>> ", orders);
+  const getTasks = (key) =>
+    new DataSource({
+      store: new ArrayStore({
+        // data: tasks,
+        data: [],
+        key: "ID",
+      }),
+      filter: ["EmployeeID", "=", key],
+    });
+  const completedValue = (rowData) => rowData.Status === "Completed";
+  const DetailTemplate = (props) => {
+    const { FirstName, LastName } = props.data.data;
+    const dataSource = getTasks(props.data.key);
+    return (
+      <React.Fragment>
+        {/* <div className="master-detail-caption">{`${FirstName} ${LastName}'s Tasks:`}</div>
+        <DataGrid
+          dataSource={dataSource}
+          showBorders={true}
+          columnAutoWidth={true}
+        >
+          <Column dataField="Subject" />
+          <Column dataField="StartDate" dataType="date" />
+          <Column dataField="DueDate" dataType="date" />
+          <Column dataField="Priority" />
+          <Column
+            caption="Completed"
+            dataType="boolean"
+            calculateCellValue={completedValue}
+          />
+        </DataGrid> */}
+      </React.Fragment>
+    );
+  };
+
+  const [shops, setShops] = useState([]);
+  const [contacts, setContacts] = useState([]);
+  const [val, setVal] = useState({ shop: "", contact: "" });
+  console.log(val);
+  const [contact, setContact] = useState("");
+  const send = async () => {
+    // {"OrderId":"30dc661e-10cc-44fa-8e2b-46a8e944df29",
+    //  "Quant":1,
+    //  "sum":780,
+    //     "product": {
+    //         "id": "ef4baa40-3d27-412e-bff5-2462016b6d68"
+    //     },
+    //  "comment":""},
+
+    let bodyParameters = {
+      vendorId: localStorage.getItem("vendorId"),
+      number: "",
+      shopId: contacts.find((shop) => shop.name === contact).id,
+      comment: "11111",
+      eMailSend: contact,
+    };
+    let output = [];
+
+    let gc = getCart();
+    console.log(">>", gc);
+    for (let obj of gc) {
+      console.log(obj, gc);
+      output.push({
+        OrderId: localStorage.getItem("orderId"),
+        Quant: obj[Object.keys(obj)[0]],
+        sum: Object.keys(obj)[0].split("::")[2],
+        product: {
+          id: Object.keys(obj)[0].split("::")[0],
+        },
+        comment: "",
+      });
+    }
+    const config = {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        User: `${localStorage.getItem("login")}`,
+      },
+    };
+    await axios
+      .post(`http://194.87.239.231:55555/api/order`, bodyParameters, config)
+      .then((data) => {
+        localStorage.setItem("orderId", data.data.id);
+      });
+
+    bodyParameters = {
+      vendorId: localStorage.getItem("vendorId"),
+      number: "",
+      shopId: contacts.find((shop) => shop.name === contact).id,
+      comment: "11111",
+      eMailSend: contact,
+    };
+
+    await axios
+      .post(`http://194.87.239.231:55555/api/ordercontent`, output, config)
+      .then((data) => {});
+  };
+  const [sumArr, setSumArr] = useState({});
   return (
     <React.Fragment>
-      <h2 className={"content-block"}>Поставщики</h2>
-      {Object.values(src).length && (
+      <Tabs
+        id="withText"
+        defaultSelectedIndex={0}
+        dataSource={tabsText}
+        onItemClick={changeTab}
+      />
+      {tab === 0 && (
+        <>
+          <h2 className={"content-block"}>Прайс-лист</h2>
+          <button style={{ margin: "5px" }} onClick={() => operation(+1)}>
+            +
+          </button>
+          <button onClick={() => operation(-1)}>-</button>
+          <br />
+          <div style={{ margin: "5px" }}>
+            {"Количество наименованийв к корзине: "}
+            {Object.keys(cart).length}
+          </div>
+          {src && Object.values(src).length && (
+            <DataGrid
+              className={"dx-card wide-card"}
+              dataSource={[
+                ...src.productsList.products.map((product) => ({
+                  ...product,
+                  ...product.meta,
+                })),
+              ]}
+              showBorders={false}
+              focusedRowEnabled={true}
+              defaultFocusedRowIndex={0}
+              columnAutoWidth={true}
+              columnHidingEnabled={true}
+              keyExpr="id"
+              onRowClick={(e) => gotoPrice(e)}
+              //   onSelectionChanged={onSelectionChanged}
+              onRowPrepared={cellPrepared}
+            >
+              <Paging defaultPageSize={10} />
+              <Pager showPageSizeSelector={true} showInfo={true} />
+              <FilterRow visible={true} />
+              <GroupPanel visible={true} />
+              {columns}
+            </DataGrid>
+          )}
+        </>
+      )}
+      {console.error(ordersAll)}
+      {tab === 2 ? (
         <DataGrid
-          className={"dx-card wide-card"}
-          dataSource={[
-            ...src.productsList.products.map((product) => ({
-              ...product,
-              ...product.meta,
-            })),
-          ]}
-          showBorders={false}
-          focusedRowEnabled={true}
-          defaultFocusedRowIndex={0}
-          columnAutoWidth={true}
-          columnHidingEnabled={true}
+          id="grid-container"
+          dataSource={ordersAll}
           keyExpr="id"
-          onRowClick={(e) => gotoPrice(e)}
+          showBorders={true}
         >
-          <Paging defaultPageSize={10} />
-          <Pager showPageSizeSelector={true} showInfo={true} />
-          <FilterRow visible={true} />
-          <GroupPanel visible={true} />
-          {columns}
+          <Column dataField="dateCreate" caption="Date creation" />
+          <Column dataField="Shop" caption="Shop" />
+          <Column dataField="Number" caption="Number" />
+          <Column dataField="comment" caption="Comment" />
+          <Column dataField="totalPrice" caption="total" />
+          <Column dataField="orderPositions" dataType="Count" />
+          <MasterDetail enabled={true} component={DetailTemplate} />
         </DataGrid>
+      ) : null}
+      {tab === 1 && orderF.length ? (
+        <>
+          {!isReadyForOrder ? (
+            <div style={{ textAlign: "center" }}>
+              <table>
+                <tr>
+                  <th scope="col">Название</th>
+                  <th scope="col">Количество</th>
+                  <th scope="col">Сумма</th>
+                </tr>
+                {orderF.map((el) => (
+                  <tr className="cart">
+                    <td className="cart__item_name">
+                      {Object.keys(el)[0].split("::")[1]}
+                    </td>
+                    <td className="cart__item_desc">
+                      {" "}
+                      {/* <span onClick={}>+</span> {el[Object.keys(el)[0]]} <span>-</span>{" "} */}
+                      {el[Object.keys(el)[0]]}
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        value={Object.keys(el)[0].split("::")[2]}
+                        onChange={(e) => {
+                          let newK =
+                            Object.keys(el)[0].split("::")[0] +
+                            "::" +
+                            Object.keys(el)[0].split("::")[1] +
+                            "::" +
+                            e.target.value;
+                          let arr = [...orderF];
+                          arr = arr.filter(
+                            (item) =>
+                              Object.keys(item)[0].split("::")[0] !==
+                              Object.keys(el)[0].split("::")[0]
+                          );
+                          setOrderF([
+                            ...arr,
+                            { [newK]: el[Object.keys(el)[0]] },
+                          ]);
+                        }}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </table>
+              <button
+                onClick={() => {
+                  setIsReadyForOrder(true);
+                  order();
+                }}
+                style={{ marginRight: "-415px", marginTop: "10px" }}
+              >
+                Заказать
+              </button>
+            </div>
+          ) : (
+            <div>
+              <SelectBox
+                items={shops}
+                defaultValue={shops[0]}
+                onValueChanged={(e) => setVal({ ...val, shop: e.value })}
+              />
+              <SelectBox
+                items={contacts.map((el) => el.name)}
+                defaultValue={contacts.map((el) => el.name)[0]}
+                onValueChanged={(e) => {
+                  setVal({ ...val, contact: e.value });
+                  setContact(e.value);
+                }}
+              />
+              <TextBox
+                defaultValue=""
+                value={contact}
+                onValueChanged={(e) => setVal({ ...orderF, contact: e.value })}
+              />
+              <input type="button" onClick={send} value="Отправить" />
+            </div>
+          )}
+        </>
+      ) : (
+        <div
+          style={{
+            margin: "0 auto",
+            width: "200px",
+            fontSize: "19px",
+            marginTop: "40px",
+          }}
+        >
+          Корзина пустая
+        </div>
       )}
     </React.Fragment>
   );
@@ -146,252 +585,4 @@ const priorities = [
   { name: "Urgent", value: 3 },
   { name: "Normal", value: 2 },
   { name: "Low", value: 1 },
-];
-
-const src = [
-  {
-    id: "564aec5e-e964-11eb-8407-5800e3fc6bdd",
-    name: 'АО "Ладога Дистрибьюшен"',
-    code: "00-00000039",
-    info: "",
-    address: null,
-    havePriceList: 1,
-    profile: {
-      id: "6cdb67ae-6f44-47aa-b349-d85979464a31",
-      name: "Ладога",
-      vendorId: "",
-      fileNameMask: "",
-      columns: [],
-      vendor: null,
-      isDef: true,
-      sourceType: 0,
-    },
-    url: null,
-  },
-  {
-    id: "8d8870c7-5278-11ec-8414-5800e3fc6bdd",
-    name: 'АО "ТД "АРОМА"',
-    code: "IT-00000070",
-    info: "",
-    address: null,
-    havePriceList: 1,
-    profile: null,
-    url: null,
-  },
-  {
-    id: "e1c3d7f4-6974-11ed-8303-001d7dd64d88",
-    name: 'ООО " ТК АКВА ВИТА"',
-    code: "IT-00000170",
-    info: "",
-    address: null,
-    havePriceList: 1,
-    profile: {
-      id: "6d4b4786-07c1-445e-a97a-2d96c3fa72a5",
-      name: "АкваВита",
-      vendorId: "",
-      fileNameMask: "",
-      columns: [],
-      vendor: null,
-      isDef: true,
-      sourceType: 0,
-    },
-    url: null,
-  },
-  {
-    id: "3a55ba24-1a15-11ed-843a-5800e3fc6bdd",
-    name: 'ООО "АЛКОСТИЛЬ"',
-    code: "IT-00000127",
-    info: "",
-    address: null,
-    havePriceList: 1,
-    profile: {
-      id: "51a8df33-831d-4108-bd04-d2505fa7e8aa",
-      name: "Алкостиль",
-      vendorId: "",
-      fileNameMask: "",
-      columns: [],
-      vendor: null,
-      isDef: true,
-      sourceType: 0,
-    },
-    url: null,
-  },
-  {
-    id: "553ffc40-f65c-11ee-8c11-d09466028ae0",
-    name: 'ООО "Америа Русс',
-    code: "IT-00000477",
-    info: "",
-    address: null,
-    havePriceList: 1,
-    profile: null,
-    url: null,
-  },
-  {
-    id: "d648bf27-e088-11eb-82ca-001d7dd64d88",
-    name: 'ООО "АСТ-интернэшнл инваэронмэнт"',
-    code: "00-00000035",
-    info: "",
-    address: null,
-    havePriceList: 1,
-    profile: null,
-    url: null,
-  },
-  {
-    id: "8757cfa7-0a3e-11ec-840d-c85b76f8ebbe",
-    name: 'ООО "Вайн Дискавери"',
-    code: "IT-00000053",
-    info: "",
-    address: null,
-    havePriceList: 1,
-    profile: {
-      id: "9f360659-3951-4383-a091-70c69d71f1ef",
-      name: "ВайнДискавери",
-      vendorId: "",
-      fileNameMask: "",
-      columns: [],
-      vendor: null,
-      isDef: true,
-      sourceType: 0,
-    },
-    url: null,
-  },
-  {
-    id: "a412077a-fa54-11ee-8c13-d09466028ae0",
-    name: 'ООО "ВЕЛЬД-21"',
-    code: "IT-00000478",
-    info: "",
-    address: null,
-    havePriceList: 1,
-    profile: null,
-    url: null,
-  },
-  {
-    id: "06ed053e-1d20-11ec-8410-5800e3fc6bdd",
-    name: 'ООО "ВИНИКОМ"',
-    code: "IT-00000061",
-    info: "",
-    address: null,
-    havePriceList: 1,
-    profile: null,
-    url: null,
-  },
-  {
-    id: "be8bafc5-da4e-11ee-8c0a-d09466028ae0",
-    name: 'ООО "Виноторговая компания "ФОРТ"',
-    code: "IT-00000445",
-    info: "",
-    address: null,
-    havePriceList: 1,
-    profile: null,
-    url: null,
-  },
-  {
-    id: "100126e0-c2c5-11eb-9674-a8a1595a0d25",
-    name: 'ООО "Зета 33"',
-    code: "00-00000012",
-    info: "",
-    address: null,
-    havePriceList: 1,
-    profile: null,
-    url: null,
-  },
-  {
-    id: "883c698e-4a05-11ed-843f-5800e3fc6bdd",
-    name: 'ООО "ИВС"',
-    code: "IT-00000148",
-    info: "",
-    address: null,
-
-    havePriceList: 1,
-    profile: {
-      id: "5a049c72-b241-49ab-b64c-b76b30b75f3e",
-      name: "ИВС",
-      vendorId: "",
-      fileNameMask: "",
-      columns: [],
-      vendor: null,
-      isDef: true,
-      sourceType: 0,
-    },
-    url: null,
-  },
-  {
-    id: "714004e6-1557-11ec-840e-5800e3fc6bdd",
-    name: 'ООО "ЛУДИНГ"',
-    code: "IT-00000058",
-    info: "",
-    address: null,
-    havePriceList: 1,
-    profile: null,
-    url: null,
-  },
-  {
-    id: "726fdf2e-d5f9-11ec-842b-af7298440c81",
-    name: 'ООО "МоРо"',
-    code: "IT-00000101",
-    info: "",
-    address: null,
-    havePriceList: 1,
-    profile: null,
-    url: null,
-  },
-  {
-    id: "57ab5d86-e5db-11ee-8c10-d09466028ae0",
-    name: 'ООО "ПРЕМЬЕР-ВИН"',
-    code: "IT-00000461",
-    info: "",
-    address: null,
-    havePriceList: 1,
-    profile: null,
-    url: null,
-  },
-  {
-    id: "324194b9-a786-11ed-8458-5800e3fc6bdd",
-    name: 'ООО "Фирма "С-2"',
-    code: "IT-00000212",
-    info: "",
-    address: null,
-    havePriceList: 1,
-    profile: null,
-    url: null,
-  },
-  {
-    id: "83702b66-5a8a-11ed-8444-5800e3fc6bdd",
-    name: 'ООО "Фирма "Саман"',
-    code: "IT-00000159",
-    info: "",
-    address: null,
-    havePriceList: 1,
-    profile: {
-      id: "6cd2a779-4e74-4c98-9481-8c01f157df7d",
-      name: "Саман",
-      vendorId: "",
-      fileNameMask: "",
-      columns: [],
-      vendor: null,
-      isDef: true,
-      sourceType: 0,
-    },
-    url: null,
-  },
-  {
-    id: "af50bcfc-d60b-11ee-8c0a-d09466028ae0",
-    name: 'ООО "ЦЕНТРОБАЛТ"',
-    code: "IT-00000442",
-    info: "",
-    address: null,
-    havePriceList: 1,
-    profile: null,
-    url: null,
-  },
-  {
-    id: "5db6d5ce-82a8-11ed-8451-5800e3fc6bdd",
-    name: 'ООО "ЮТА"',
-    code: "IT-00000192",
-    info: "",
-    address: null,
-    havePriceList: 1,
-    profile: null,
-    url: null,
-  },
 ];
