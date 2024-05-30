@@ -39,7 +39,7 @@ export default function Vendors() {
       //     console.warn(error);
       //   });
 
-      await axios(
+      axios(
         `http://194.87.239.231:55555/api/document/${localStorage.getItem(
           "vendorId"
         )}`,
@@ -50,16 +50,18 @@ export default function Vendors() {
             User: `${localStorage.getItem("login")}`,
           },
         }
-      ).then((data) => {
-        setSrc(data.data);
-        let res = {};
-        data.data.profile.columns.forEach((col) => {
-          res[col.code] = { name: col.name, position: col.position };
-        });
-        setObjName(res);
-        console.log(res);
-        console.log(data);
-      });
+      )
+        .then((data) => {
+          setSrc(data.data);
+          let res = {};
+          data.data.profile.columns.forEach((col) => {
+            res[col.code] = { name: col.name, position: col.position };
+          });
+          setObjName(res);
+          console.log(res);
+          console.log(data);
+        })
+        .catch((e) => console.log);
     }
     fetchData();
   }, []);
@@ -205,7 +207,7 @@ export default function Vendors() {
     }
     console.log("???", gc);
     setOrderF(gc);
-    setIsReadyForOrder(true);
+    //setIsReadyForOrder(true);
   }, []);
 
   const tabsText = [
@@ -261,18 +263,22 @@ export default function Vendors() {
         "vendorId"
       )}`,
       config
-    ).then((data) => setShops(data.data.map((el) => el.name)));
+    )
+      .then((data) => setShops(data.data.map((el) => el.name)))
+      .catch((e) => console.log);
 
     await axios(
       `http://194.87.239.231:55555/api/VendorContact/${localStorage.getItem(
         "vendorId"
       )}`,
       config
-    ).then((data) =>
-      setContacts(
-        data.data.map((el) => ({ id: el.id, name: el.name, price: el.price }))
+    )
+      .then((data) =>
+        setContacts(
+          data.data.map((el) => ({ id: el.id, name: el.name, price: el.price }))
+        )
       )
-    );
+      .catch((e) => console.log);
   };
   const [ordersAll, setOrdersAll] = useState([]);
   const getOrders = async () => {
@@ -282,11 +288,12 @@ export default function Vendors() {
         User: `${localStorage.getItem("login")}`,
       },
     };
+
     await axios
       .get(
         `http://194.87.239.231:55555/api/order/${localStorage.getItem(
           "vendorId"
-        )}?orderid=${localStorage.getItem("orderId")}`,
+        )}`,
         config
       )
       .then((data) => {
@@ -295,44 +302,87 @@ export default function Vendors() {
             return order;
           })
         );
-      });
+      })
+      .catch((e) => console.log);
   };
-  //console.log(">>> ", orders);
-  const getTasks = (key) =>
-    new DataSource({
-      store: new ArrayStore({
-        // data: tasks,
-        data: [],
-        key: "ID",
-      }),
-      filter: ["EmployeeID", "=", key],
-    });
+
   const completedValue = (rowData) => rowData.Status === "Completed";
+  const [orderIdMaster, setOrderIdMaster] = useState("");
   const DetailTemplate = (props) => {
-    const { FirstName, LastName } = props.data.data;
-    const dataSource = getTasks(props.data.key);
+    const [res, setRes] = useState([]);
+    const getOrder = async (id) => {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          User: `${localStorage.getItem("login")}`,
+        },
+      };
+      let data;
+      try {
+        data = await axios.get(
+          `http://194.87.239.231:55555/api/ordercontent/${id}`,
+          config
+        );
+      } catch (e) {
+        console.error(e);
+      }
+      console.log(data);
+      console.log(
+        data.data.map((order) => ({
+          id: order.id,
+          Sku: order.product.sku,
+          Name: order.product.name,
+          Quant: order.quant,
+          Comment: order.comment,
+          Sum: order.sum,
+        }))
+      );
+      // return data.data.map((order) => ({
+      //   id: order.id,
+      //   Sku: order.product.sku,
+      //   Name: order.product.name,
+      //   Quant: order.quant,
+      //   Comment: order.comment,
+      //   Sum: order.sum,
+      // }));
+      return await data.data.map((order) => ({
+        id: order.id,
+        Sku: order.product.sku,
+        Name: order.product.name,
+        Quant: order.quant,
+        Comment: order.comment,
+        Sum: order.sum,
+      }));
+    };
+    // const { FirstName, LastName } = props.data.data;
+    const [dataSource, setDataSource] = useState([]);
+    useEffect(() => {
+      async function exec() {
+        setDataSource(await getOrder(props.data.key));
+      }
+      exec();
+    }, []);
+    console.log(dataSource);
+    useEffect(() => {}, []);
     return (
       <React.Fragment>
-        {/* <div className="master-detail-caption">{`${FirstName} ${LastName}'s Tasks:`}</div>
+        <div className="master-detail-caption">{}</div>
         <DataGrid
           dataSource={dataSource}
           showBorders={true}
           columnAutoWidth={true}
         >
-          <Column dataField="Subject" />
-          <Column dataField="StartDate" dataType="date" />
-          <Column dataField="DueDate" dataType="date" />
-          <Column dataField="Priority" />
-          <Column
-            caption="Completed"
-            dataType="boolean"
-            calculateCellValue={completedValue}
-          />
-        </DataGrid> */}
+          <Column dataField="Sku" />
+          <Column dataField="Name" />
+          <Column dataField="Quant" />
+          <Column dataField="Sum" />
+          <Column dataField="Comment" />
+        </DataGrid>
       </React.Fragment>
     );
   };
 
+  console.error(">>> ", localStorage.getItem("orderId"));
   const [shops, setShops] = useState([]);
   const [contacts, setContacts] = useState([]);
   const [val, setVal] = useState({ shop: "", contact: "" });
@@ -358,7 +408,28 @@ export default function Vendors() {
 
     let gc = getCart();
     console.log(">>", gc);
-    for (let obj of gc) {
+    const config = {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        User: `${localStorage.getItem("login")}`,
+      },
+    };
+    await axios
+      .post(`http://194.87.239.231:55555/api/order`, bodyParameters, config)
+      .then((data) => {
+        localStorage.setItem("orderId", data.data.id);
+      })
+      .catch((e) => console.log);
+
+    bodyParameters = {
+      vendorId: localStorage.getItem("vendorId"),
+      number: "",
+      shopId: contacts.find((shop) => shop.name === contact).id,
+      comment: "11111",
+      eMailSend: contact,
+    };
+    alert(localStorage.getItem("orderId"));
+    for (let obj of orderF) {
       console.log(obj, gc);
       output.push({
         OrderId: localStorage.getItem("orderId"),
@@ -370,31 +441,17 @@ export default function Vendors() {
         comment: "",
       });
     }
-    const config = {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-        User: `${localStorage.getItem("login")}`,
-      },
-    };
-    await axios
-      .post(`http://194.87.239.231:55555/api/order`, bodyParameters, config)
-      .then((data) => {
-        localStorage.setItem("orderId", data.data.id);
-      });
-
-    bodyParameters = {
-      vendorId: localStorage.getItem("vendorId"),
-      number: "",
-      shopId: contacts.find((shop) => shop.name === contact).id,
-      comment: "11111",
-      eMailSend: contact,
-    };
-
     await axios
       .post(`http://194.87.239.231:55555/api/ordercontent`, output, config)
-      .then((data) => {});
+      .then((data) => {})
+      .catch((e) => console.log);
+
+    setCart({});
+    setIsReadyForOrder(false);
+    setOrderF([]);
   };
   const [sumArr, setSumArr] = useState({});
+
   return (
     <React.Fragment>
       <Tabs
@@ -443,7 +500,13 @@ export default function Vendors() {
           )}
         </>
       )}
-      {console.error(ordersAll)}
+      {console.error(
+        ">>>",
+        orderF.sort(
+          (a, b) =>
+            Object.keys(a)[0].split("::")[0] > Object.keys(b)[0].split("::")[0]
+        )
+      )}
       {tab === 2 ? (
         <DataGrid
           id="grid-container"
@@ -470,42 +533,49 @@ export default function Vendors() {
                   <th scope="col">Количество</th>
                   <th scope="col">Сумма</th>
                 </tr>
-                {orderF.map((el) => (
-                  <tr className="cart">
-                    <td className="cart__item_name">
-                      {Object.keys(el)[0].split("::")[1]}
-                    </td>
-                    <td className="cart__item_desc">
-                      {" "}
-                      {/* <span onClick={}>+</span> {el[Object.keys(el)[0]]} <span>-</span>{" "} */}
-                      {el[Object.keys(el)[0]]}
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        value={Object.keys(el)[0].split("::")[2]}
-                        onChange={(e) => {
-                          let newK =
-                            Object.keys(el)[0].split("::")[0] +
-                            "::" +
-                            Object.keys(el)[0].split("::")[1] +
-                            "::" +
-                            e.target.value;
-                          let arr = [...orderF];
-                          arr = arr.filter(
-                            (item) =>
-                              Object.keys(item)[0].split("::")[0] !==
-                              Object.keys(el)[0].split("::")[0]
-                          );
-                          setOrderF([
-                            ...arr,
-                            { [newK]: el[Object.keys(el)[0]] },
-                          ]);
-                        }}
-                      />
-                    </td>
-                  </tr>
-                ))}
+                {orderF
+                  .sort((a, b) =>
+                    Object.keys(a)[0]
+                      .split("::")[0]
+                      .localeCompare(Object.keys(b)[0].split("::")[0])
+                  )
+                  .map((el) => (
+                    <tr className="cart" key={el.id}>
+                      <td className="cart__item_name">
+                        {Object.keys(el)[0].split("::")[1]}
+                      </td>
+                      <td className="cart__item_desc">
+                        {" "}
+                        {/* <span onClick={}>+</span> {el[Object.keys(el)[0]]} <span>-</span>{" "} */}
+                        {el[Object.keys(el)[0]]}
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          value={Object.keys(el)[0].split("::")[2]}
+                          onChange={(e) => {
+                            console.log(e);
+                            let newK =
+                              Object.keys(el)[0].split("::")[0] +
+                              "::" +
+                              Object.keys(el)[0].split("::")[1] +
+                              "::" +
+                              e.target.value;
+                            let arr = [...orderF];
+                            arr = arr.filter(
+                              (item) =>
+                                Object.keys(item)[0].split("::")[0] !==
+                                Object.keys(el)[0].split("::")[0]
+                            );
+                            setOrderF([
+                              ...arr,
+                              { [newK]: el[Object.keys(el)[0]] },
+                            ]);
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  ))}
               </table>
               <button
                 onClick={() => {
