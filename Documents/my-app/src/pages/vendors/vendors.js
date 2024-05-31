@@ -19,6 +19,7 @@ import ArrayStore from "devextreme/data/array_store";
 import DataSource from "devextreme/data/data_source";
 import { useCallback } from "react";
 import { Popup, Position, ToolbarItem } from "devextreme-react/popup";
+// import "devextreme/dist/css/dx.light.css";
 export default function Vendors() {
   const [src, setSrc] = useState(null);
   const [arrName, setObjName] = useState({});
@@ -503,6 +504,15 @@ export default function Vendors() {
         hidingPriority={idx}
       />
     ));
+  let resultDetailedTable = [];
+  for (let key in detailedTable) {
+    resultDetailedTable.push(
+      <tr>
+        <td>{key}</td>
+        <td>{detailedTable[key]}</td>
+      </tr>
+    );
+  }
   const renderPopup = () => {
     return (
       <>
@@ -513,20 +523,21 @@ export default function Vendors() {
             ) : null}{" "}
           </div>
           <div>
-            Name: {detailedTable.name}
-            <br />
-            Barcode: {detailedTable.barcode}
-            <br />
-            Country: {detailedTable.country}
-            <br />
-            {/* {detailedTable.} */}
-            <br />
+            <table>
+              <thead>
+                <tr>
+                  <th>Название</th>
+                  <th>Значение</th>
+                </tr>
+              </thead>
+              <tbody>{resultDetailedTable}</tbody>
+            </table>
           </div>
         </div>
       </>
     );
   };
-
+  console.log(detailedTable);
   return (
     <React.Fragment>
       <Tabs
@@ -581,7 +592,7 @@ export default function Vendors() {
         width={900}
         height={800}
         showTitle={true}
-        // title={currentHouse.Address}
+        title={detailedTable.name}
         dragEnabled={false}
         hideOnOutsideClick={true}
         visible={popupVisible}
