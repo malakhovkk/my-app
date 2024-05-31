@@ -17,6 +17,8 @@ import TextBox, { TextBoxTypes } from "devextreme-react/text-box";
 import { MasterDetail } from "devextreme-react/data-grid";
 import ArrayStore from "devextreme/data/array_store";
 import DataSource from "devextreme/data/data_source";
+import { useCallback } from "react";
+import { Popup, Position, ToolbarItem } from "devextreme-react/popup";
 export default function Vendors() {
   const [src, setSrc] = useState(null);
   const [arrName, setObjName] = useState({});
@@ -451,6 +453,79 @@ export default function Vendors() {
     setOrderF([]);
   };
   const [sumArr, setSumArr] = useState({});
+  const [detailedItem, setDetailedItem] = useState([]);
+  const [detailedTable, setDetailedTable] = useState({});
+  const showDetailedItem = async (e) => {
+    const config = {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        User: `${localStorage.getItem("login")}`,
+      },
+    };
+    const result = await axios.get(
+      `http://194.87.239.231:55555/api/PriceImages/${e.key}`,
+      config
+    );
+    const table = await axios.get(
+      `http://194.87.239.231:55555/api/product/${e.key}`,
+      config
+    );
+    console.warn(table);
+    setDetailedTable(table.data.meta.json);
+    setDetailedItem(result.data);
+    setPopupVisible(true);
+    console.log(detailedItem);
+  };
+  const [popupVisible, setPopupVisible] = useState(false);
+  const handlePopupHidden = useCallback(() => {
+    setPopupVisible(false);
+  }, []);
+
+  // useEffect(() => {
+  //   async function exec()
+  //   {
+  //   if(popupVisible)
+  //     {
+  //       await axios.get(`http://194.87.239.231:55555/api/product/${}`)
+  //     }
+  //   }
+  // }, [popupVisible])
+
+  // {{base_url}}/api/product/eb22e226-af53-4396-8ed6-2819a9531d7e
+
+  const columnsDetailed =
+    src &&
+    src.profile.columns.map((column, idx) => (
+      <Column
+        dataField={column.code}
+        width={190}
+        caption={column.name}
+        hidingPriority={idx}
+      />
+    ));
+  const renderPopup = () => {
+    return (
+      <>
+        <div style={{ display: "flex" }}>
+          <div>
+            {detailedItem.length ? (
+              <img src={"data:image/png;base64," + detailedItem[1].photo} />
+            ) : null}{" "}
+          </div>
+          <div>
+            Name: {detailedTable.name}
+            <br />
+            Barcode: {detailedTable.barcode}
+            <br />
+            Country: {detailedTable.country}
+            <br />
+            {/* {detailedTable.} */}
+            <br />
+          </div>
+        </div>
+      </>
+    );
+  };
 
   return (
     <React.Fragment>
@@ -488,6 +563,7 @@ export default function Vendors() {
               columnHidingEnabled={true}
               keyExpr="id"
               onRowClick={(e) => gotoPrice(e)}
+              onRowDblClick={(e) => showDetailedItem(e)}
               //   onSelectionChanged={onSelectionChanged}
               onRowPrepared={cellPrepared}
             >
@@ -500,6 +576,19 @@ export default function Vendors() {
           )}
         </>
       )}
+
+      <Popup
+        width={900}
+        height={800}
+        showTitle={true}
+        // title={currentHouse.Address}
+        dragEnabled={false}
+        hideOnOutsideClick={true}
+        visible={popupVisible}
+        onHiding={handlePopupHidden}
+        contentRender={renderPopup}
+        showCloseButton={true}
+      />
       {console.error(
         ">>>",
         orderF.sort(
@@ -523,6 +612,7 @@ export default function Vendors() {
           <MasterDetail enabled={true} component={DetailTemplate} />
         </DataGrid>
       ) : null}
+
       {tab === 1 && orderF.length ? (
         <>
           {!isReadyForOrder ? (
