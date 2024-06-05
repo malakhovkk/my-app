@@ -18,7 +18,7 @@ import "./tasks.css";
 import { useNavigate } from "react-router-dom";
 import myUserInfo from "../../utils/default-user";
 
-export default function Task() {
+export default function Pricelist() {
   console.log(">>> ", defaultUser);
   const [src, setSrc] = useState();
   useEffect(() => {
@@ -67,7 +67,7 @@ export default function Task() {
   function gotoPrice(e) {
     console.log(e, e.data, e.data.id);
     localStorage.setItem("vendorId", e.data.id);
-    navigate("../pricelist");
+    navigate("../vendors");
   }
   const cellPrepared = (e) => {
     if (e.rowType === "data") {

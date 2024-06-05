@@ -1,21 +1,21 @@
 export const navigation = [
   {
-    text: 'Home',
-    path: '/home',
-    icon: 'home'
+    text: "Home",
+    path: "/home",
+    icon: "home",
   },
   {
-    text: 'Examples',
-    icon: 'folder',
+    text: "Vinopark",
+    icon: "folder",
     items: [
+      // {
+      //   text: "Profile",
+      //   path: "/profile",
+      // },
       {
-        text: 'Profile',
-        path: '/profile'
+        text: "Vendors",
+        path: "/vendors",
       },
-      {
-        text: 'Tasks',
-        path: '/tasks'
-      }
-    ]
-  }
-  ];
+    ],
+  },
+];

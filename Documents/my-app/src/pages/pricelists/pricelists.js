@@ -9,7 +9,7 @@ import DataGrid, {
 } from "devextreme-react/data-grid";
 import { GroupPanel } from "devextreme-react/data-grid";
 import axios from "axios";
-import "./vendors.css";
+import "./pricelists.css";
 import { useNavigate } from "react-router-dom";
 import { Tabs } from "devextreme-react";
 import SelectBox, { SelectBoxTypes } from "devextreme-react/select-box";
@@ -19,9 +19,8 @@ import ArrayStore from "devextreme/data/array_store";
 import DataSource from "devextreme/data/data_source";
 import { useCallback } from "react";
 import { Popup, Position, ToolbarItem } from "devextreme-react/popup";
-import { SearchPanel } from "devextreme-react/data-grid";
 // import "devextreme/dist/css/dx.light.css";
-export default function Vendors() {
+export default function Pricelists() {
   const [src, setSrc] = useState(null);
   const [arrName, setObjName] = useState({});
   useEffect(() => {
@@ -123,7 +122,7 @@ export default function Vendors() {
       ) {
         //e.cellElement.style.cssText = "color: white; background-color: purple";
         e.rowElement.style.cssText =
-          "color: white; font-width:bold; background-color: #DDEC7B";
+          "color: white; font-width:bold; background-color: #FFDB8B";
         return;
         // or
         //e.cellElement.classList.add("my-class");
@@ -134,7 +133,7 @@ export default function Vendors() {
       ) {
         //e.cellElement.style.cssText = "color: white; background-color: purple";
         e.rowElement.style.cssText =
-          "color: white; font-width:bold; background-color: #b24fb2";
+          "color: white; font-width:bold; background-color: #FFDB8B";
         // or
         //e.cellElement.classList.add("my-class");
       }
@@ -339,6 +338,7 @@ export default function Vendors() {
           Quant: order.quant,
           Comment: order.comment,
           Sum: order.sum,
+          ShopName: order.ShopName,
         }))
       );
       // return data.data.map((order) => ({
@@ -356,6 +356,7 @@ export default function Vendors() {
         Quant: order.quant,
         Comment: order.comment,
         Sum: order.sum,
+        ShopName: order.shopName,
       }));
     };
     // const { FirstName, LastName } = props.data.data;
@@ -379,6 +380,7 @@ export default function Vendors() {
           <Column dataField="Sku" />
           <Column dataField="Name" />
           <Column dataField="Quant" />
+          <Column dataField="ShopName" />
           <Column dataField="Sum" />
           <Column dataField="Comment" />
         </DataGrid>
@@ -432,6 +434,7 @@ export default function Vendors() {
       comment: "11111",
       eMailSend: contact,
     };
+    alert(localStorage.getItem("orderId"));
     for (let obj of orderF) {
       console.log(obj, gc);
       output.push({
@@ -578,7 +581,6 @@ export default function Vendors() {
               //   onSelectionChanged={onSelectionChanged}
               onRowPrepared={cellPrepared}
             >
-              <SearchPanel visible={true} width={240} placeholder="Search..." />
               <Paging defaultPageSize={10} />
               <Pager showPageSizeSelector={true} showInfo={true} />
               <FilterRow visible={true} />
@@ -679,12 +681,23 @@ export default function Vendors() {
                     </tr>
                   ))}
               </table>
+
+              <button
+                onClick={() => {
+                  setCart({});
+                  setOrderF([]);
+                  setTab(0);
+                }}
+                style={{ marginTop: "10px", marginRight: "20px" }}
+              >
+                Очистить корзину
+              </button>
               <button
                 onClick={() => {
                   setIsReadyForOrder(true);
                   order();
                 }}
-                style={{ marginRight: "-415px", marginTop: "10px" }}
+                style={{ marginRight: "-255px", marginTop: "10px" }}
               >
                 Заказать
               </button>
@@ -713,8 +726,7 @@ export default function Vendors() {
             </div>
           )}
         </>
-      ) : null}
-      {tab === 1 && orderF.length === 0 ? (
+      ) : (
         <div
           style={{
             margin: "0 auto",
@@ -725,7 +737,7 @@ export default function Vendors() {
         >
           Корзина пустая
         </div>
-      ) : null}
+      )}
     </React.Fragment>
   );
 }

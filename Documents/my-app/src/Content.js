@@ -12,7 +12,7 @@ export default function Content() {
           <Route key={path} path={path} element={element} />
         ))}
         <Route path="*" element={<Navigate to="/home" />} />
-        <Route path="/vendors" element={<Vendors />} />
+        <Route path="/pricelist" element={<Vendors />} />
       </Routes>
       <Footer>
         Copyright © 2011-{new Date().getFullYear()} {appInfo.title} Inc.

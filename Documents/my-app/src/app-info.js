@@ -1,5 +1,4 @@
 const appInfo = {
-    title: 'My App'
+  title: "Vinopark app",
 };
 export default appInfo;
-

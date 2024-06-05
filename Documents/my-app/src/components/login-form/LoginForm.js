@@ -100,7 +100,7 @@ export default function LoginForm() {
 
 const emailEditorOptions = {
   stylingMode: "filled",
-  placeholder: "Nickmame",
+  placeholder: "Nickname",
   mode: "text",
 };
 const passwordEditorOptions = {
