@@ -266,7 +266,9 @@ export default function Vendors() {
       `http://194.87.239.231:55555/api/shop/e419c34f-6856-11ea-8298-001d7dd64d88`,
       config
     )
-      .then((data) => setShops(data.data.map((el) => el.name)))
+      .then((data) =>
+        setShops(data.data.map((el) => ({ id: el.id, name: el.name })))
+      )
       .catch((e) => console.log);
 
     await axios(
@@ -408,7 +410,7 @@ export default function Vendors() {
       number: "",
       shopId: contacts.find((shop) => shop.name === contact).id,
       comment: "11111",
-      eMailSend: contact,
+      eMailSend: "",
     };
     let output = [];
 
@@ -421,13 +423,14 @@ export default function Vendors() {
       },
     };
     try {
-      const id = await axios.post(
+      const data = await axios.post(
         `http://194.87.239.231:55555/api/order`,
         bodyParameters,
         config
       );
 
-      localStorage.setItem("orderId", data.id);
+      localStorage.setItem("orderId", data.data.id);
+      console.log(data);
     } catch (e) {
       console.log(e);
     }
@@ -452,10 +455,6 @@ export default function Vendors() {
       });
     }
 
-    await axios
-      .post(`http://194.87.239.231:55555/api/ordercontent`, output, config)
-      .then((data) => {})
-      .catch((e) => console.log);
     try {
       await axios.post(
         `http://194.87.239.231:55555/api/ordercontent`,
@@ -465,19 +464,23 @@ export default function Vendors() {
     } catch (e) {
       console.log(e);
     }
+    const mailToSend = val["contact"];
+    const shopToSend = val["shop"];
+    console.log(shops, shop);
+    console.log(val);
     bodyParameters = {
       OrderId: localStorage.getItem("orderId"),
       EMailList: mailToSend,
-      ShopId: shopToSend,
+      ShopId: shops.find((myshop) => myshop.name === shop).id,
     };
     try {
-      const id = await axios.post(
+      const data = await axios.put(
         `http://194.87.239.231:55555/api/orderSend`,
         bodyParameters,
         config
       );
 
-      localStorage.setItem("orderId", data.id);
+      localStorage.setItem("orderId", data.data.id);
     } catch (e) {
       console.log(e);
     }
@@ -726,9 +729,12 @@ export default function Vendors() {
           ) : (
             <div>
               <SelectBox
-                items={shops}
-                defaultValue={shops[0]}
-                onValueChanged={(e) => setVal({ ...val, shop: e.value })}
+                items={shops.map((shop) => shop.name)}
+                defaultValue={shops[0].name}
+                onValueChanged={(e) => {
+                  setVal({ ...val, shop: e.value });
+                  setShop(e.value);
+                }}
               />
               <SelectBox
                 items={contacts.map((el) => el.name)}
