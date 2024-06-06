@@ -338,7 +338,7 @@ export default function Pricelists() {
           Quant: order.quant,
           Comment: order.comment,
           Sum: order.sum,
-          ShopName: order.ShopName,
+          ShopName: order.shopName,
         }))
       );
       // return data.data.map((order) => ({
@@ -618,7 +618,7 @@ export default function Pricelists() {
           showBorders={true}
         >
           <Column dataField="dateCreate" caption="Date creation" />
-          <Column dataField="Shop" caption="Shop" />
+          <Column dataField="shopName" caption=" ShopName" x />
           <Column dataField="Number" caption="Number" />
           <Column dataField="comment" caption="Comment" />
           <Column dataField="totalPrice" caption="total" />

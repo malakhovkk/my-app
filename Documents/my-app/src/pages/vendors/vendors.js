@@ -263,9 +263,7 @@ export default function Vendors() {
       },
     };
     await axios(
-      `http://194.87.239.231:55555/api/shop/${localStorage.getItem(
-        "vendorId"
-      )}`,
+      `http://194.87.239.231:55555/api/shop/e419c34f-6856-11ea-8298-001d7dd64d88`,
       config
     )
       .then((data) => setShops(data.data.map((el) => el.name)))
@@ -293,21 +291,21 @@ export default function Vendors() {
       },
     };
 
-    await axios
-      .get(
-        `http://194.87.239.231:55555/api/order/${localStorage.getItem(
-          "vendorId"
-        )}`,
-        config
-      )
-      .then((data) => {
-        setOrdersAll(
-          data.data.map((order) => {
-            return order;
-          })
-        );
-      })
-      .catch((e) => console.log);
+    //   await axios
+    //     .get(
+    //       `http://194.87.239.231:55555/api/order/${localStorage.getItem(
+    //         "vendorId"
+    //       )}`,
+    //       config
+    //     )
+    //     .then((data) => {
+    //       setOrdersAll(
+    //         data.data.map((order) => {
+    //           return order;
+    //         })
+    //       );
+    //     })
+    //     .catch((e) => console.log);
   };
 
   const completedValue = (rowData) => rowData.Status === "Completed";
@@ -356,6 +354,8 @@ export default function Vendors() {
         Quant: order.quant,
         Comment: order.comment,
         Sum: order.sum,
+        Number: order.number,
+        ShopName: order.shopName,
       }));
     };
     // const { FirstName, LastName } = props.data.data;
@@ -392,6 +392,8 @@ export default function Vendors() {
   const [val, setVal] = useState({ shop: "", contact: "" });
   console.log(val);
   const [contact, setContact] = useState("");
+  const [mailToSend, setMailToSend] = useState("");
+  const [shopToSend, setShopToSend] = useState("");
   const send = async () => {
     // {"OrderId":"30dc661e-10cc-44fa-8e2b-46a8e944df29",
     //  "Quant":1,
@@ -418,13 +420,17 @@ export default function Vendors() {
         User: `${localStorage.getItem("login")}`,
       },
     };
-    await axios
-      .post(`http://194.87.239.231:55555/api/order`, bodyParameters, config)
-      .then((data) => {
-        localStorage.setItem("orderId", data.data.id);
-      })
-      .catch((e) => console.log);
+    try {
+      const id = await axios.post(
+        `http://194.87.239.231:55555/api/order`,
+        bodyParameters,
+        config
+      );
 
+      localStorage.setItem("orderId", data.id);
+    } catch (e) {
+      console.log(e);
+    }
     bodyParameters = {
       vendorId: localStorage.getItem("vendorId"),
       number: "",
@@ -432,6 +438,7 @@ export default function Vendors() {
       comment: "11111",
       eMailSend: contact,
     };
+
     for (let obj of orderF) {
       console.log(obj, gc);
       output.push({
@@ -444,11 +451,36 @@ export default function Vendors() {
         comment: "",
       });
     }
+
     await axios
       .post(`http://194.87.239.231:55555/api/ordercontent`, output, config)
       .then((data) => {})
       .catch((e) => console.log);
+    try {
+      await axios.post(
+        `http://194.87.239.231:55555/api/ordercontent`,
+        output,
+        config
+      );
+    } catch (e) {
+      console.log(e);
+    }
+    bodyParameters = {
+      OrderId: localStorage.getItem("orderId"),
+      EMailList: mailToSend,
+      ShopId: shopToSend,
+    };
+    try {
+      const id = await axios.post(
+        `http://194.87.239.231:55555/api/orderSend`,
+        bodyParameters,
+        config
+      );
 
+      localStorage.setItem("orderId", data.id);
+    } catch (e) {
+      console.log(e);
+    }
     setCart({});
     setIsReadyForOrder(false);
     setOrderF([]);
@@ -538,6 +570,8 @@ export default function Vendors() {
     );
   };
   console.log(detailedTable);
+  const [shop, setShop] = useState("");
+  const [mail, setMail] = useState("");
   return (
     <React.Fragment>
       <Tabs
@@ -616,8 +650,8 @@ export default function Vendors() {
           showBorders={true}
         >
           <Column dataField="dateCreate" caption="Date creation" />
-          <Column dataField="Shop" caption="Shop" />
-          <Column dataField="Number" caption="Number" />
+          <Column dataField="shopName" caption="ShopName" />
+          <Column dataField="number" caption="Number" />
           <Column dataField="comment" caption="Comment" />
           <Column dataField="totalPrice" caption="total" />
           <Column dataField="orderPositions" dataType="Count" />
@@ -709,6 +743,16 @@ export default function Vendors() {
                 value={contact}
                 onValueChanged={(e) => setVal({ ...orderF, contact: e.value })}
               />
+              {/* <TextBox
+                defaultValue=""
+                value={shop}
+                onValueChanged={(e) => setShop(e.value )}
+              />
+              <TextBox
+                defaultValue=""
+                value={mail}
+                onValueChanged={(e) => setMail(e.value)}
+              /> */}
               <input type="button" onClick={send} value="Отправить" />
             </div>
           )}
