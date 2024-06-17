@@ -72,7 +72,18 @@ export default function Vendors() {
   const navigate = useNavigate();
   function gotoPrice(e) {
     console.log(e);
-    setCur(e.data.id + "::" + e.data.name + "::" + e.data.quant * e.data.price);
+    alert(
+      e.data.quant,
+      e.data.price,
+      e.data.quant * e.data.price.replace(",", ".")
+    );
+    setCur(
+      e.data.id +
+        "::" +
+        e.data.name +
+        "::" +
+        e.data.quant * e.data.price.replace(",", ".")
+    );
 
     // console.log(e);
     // localStorage.getItem("vendorId", e.data.id);

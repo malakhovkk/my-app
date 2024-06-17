@@ -618,7 +618,7 @@ export default function Pricelists() {
           showBorders={true}
         >
           <Column dataField="dateCreate" caption="Date creation" />
-          <Column dataField="shopName" caption=" ShopName" x />
+          <Column dataField="shopName" caption=" ShopName" />
           <Column dataField="Number" caption="Number" />
           <Column dataField="comment" caption="Comment" />
           <Column dataField="totalPrice" caption="total" />
