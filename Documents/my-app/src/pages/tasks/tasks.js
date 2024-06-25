@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "devextreme/data/odata/store";
 
-import { getUser } from "../../api/auth";
+import { getPriceList, getUser } from "../../api/auth";
 
 import defaultUser from "../../utils/default-user";
 
@@ -43,22 +43,37 @@ export default function Task() {
       //const user = getUser();
       const user = await getUser();
       console.log(user);
+      //const data = getPriceList();
 
-      axios("http://194.87.239.231:55555/api/Vendor?have_pricelist=1", {
-        headers: {
-          //"content-type": "application/x-www-form-urlencoded",
-          //Authorization: `Bearer ${localStorage.getItem("token1")}`,
-          //User: `${localStorage.getItem("login1")}`,
+      const res = await getPriceList();
+      console.log("(1): ", res);
+      if (res.isOk) {
+        // console.log(res.data);
+        // setSrc(res.data);
+        // // let res = {};
+        // res.data.profile.columns.forEach((col) => {
+        //   res[col.code] = { name: col.name, position: col.position };
+        // });
+        // console.log(data);
+        console.log("(2): ", res);
+        setSrc(res.data);
+      }
+      // setObjName(res);
+      // axios("http://194.87.239.231:55555/api/Vendor?have_pricelist=1", {
+      //   headers: {
+      //     //"content-type": "application/x-www-form-urlencoded",
+      //     //Authorization: `Bearer ${localStorage.getItem("token1")}`,
+      //     //User: `${localStorage.getItem("login1")}`,
 
-          //Authorization: `Bearer ${getUser().data.token}`,
-          //User: getUser().data.login,
+      //     //Authorization: `Bearer ${getUser().data.token}`,
+      //     //User: getUser().data.login,
 
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          User: localStorage.getItem("login"),
-        },
-      }).then((data) => {
-        setSrc(data.data);
-      });
+      //     Authorization: `Bearer ${localStorage.getItem("token")}`,
+      //     User: localStorage.getItem("login"),
+      //   },
+      // }).then((data) => {
+      //   setSrc(data.data);
+      // });
     }
     signIn();
   }, []);
@@ -102,6 +117,7 @@ export default function Task() {
         keyExpr="id"
         width="100%"
         onRowClick={(e) => gotoPrice(e)}
+
         // onRowPrepared={cellPrepared}
       >
         <Paging defaultPageSize={10} />

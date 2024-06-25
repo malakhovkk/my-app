@@ -20,6 +20,8 @@ import DataSource from "devextreme/data/data_source";
 import { useCallback } from "react";
 import { Popup, Position, ToolbarItem } from "devextreme-react/popup";
 import { SearchPanel } from "devextreme-react/data-grid";
+import * as CONST_API from "../../constAPI/constAPI";
+import { getPriceList } from "../../api/auth";
 // import "devextreme/dist/css/dx.light.css";
 export default function Vendors() {
   const [src, setSrc] = useState(null);
@@ -42,30 +44,40 @@ export default function Vendors() {
       //   .catch((error) => {
       //     console.warn(error);
       //   });
-
-      axios(
-        `http://194.87.239.231:55555/api/document/${localStorage.getItem(
-          "vendorId"
-        )}`,
-        {
-          headers: {
-            //"content-type": "application/x-www-form-urlencoded",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-            User: `${localStorage.getItem("login")}`,
-          },
-        }
-      )
-        .then((data) => {
-          setSrc(data.data);
-          let res = {};
-          data.data.profile.columns.forEach((col) => {
-            res[col.code] = { name: col.name, position: col.position };
-          });
-          setObjName(res);
-          console.log(res);
-          console.log(data);
-        })
-        .catch((e) => console.log);
+      const res = await getPriceList();
+      console.log(res);
+      if (res.isOk) {
+        console.log(res.data);
+        setSrc(res.data);
+        // let res = {};
+        res.data.profile.columns.forEach((col) => {
+          res[col.code] = { name: col.name, position: col.position };
+        });
+        setObjName(res);
+      }
+      // axios(
+      //   `http://194.87.239.231:55555/${
+      //     CONST_API.GET_PRICELIST
+      //   }/${localStorage.getItem("vendorId")}`,
+      //   {
+      //     headers: {
+      //       //"content-type": "application/x-www-form-urlencoded",
+      //       Authorization: `Bearer ${localStorage.getItem("token")}`,
+      //       User: `${localStorage.getItem("login")}`,
+      //     },
+      //   }
+      // )
+      //   .then((data) => {
+      //     setSrc(data.data);
+      //     let res = {};
+      //     data.data.profile.columns.forEach((col) => {
+      //       res[col.code] = { name: col.name, position: col.position };
+      //     });
+      //     setObjName(res);
+      //     console.log(res);
+      //     console.log(data);
+      //   })
+      //   .catch((e) => console.log);
     }
     fetchData();
   }, []);
@@ -123,7 +135,7 @@ export default function Vendors() {
 
   const cellPrepared = (e) => {
     if (e.rowType === "data") {
-      console.log(e.data);
+      console.log(">>> ", e.data, cart);
       //if (e.column.dataField === "Speed" && e.data.Speed > e.data.SpeedLimit) {
 
       if (
@@ -603,7 +615,7 @@ export default function Vendors() {
           <button onClick={() => operation(-1)}>-</button>
           <br />
           <div style={{ margin: "5px" }}>
-            {"Количество наименованийв к корзине: "}
+            {"Количество наименованийв в корзине: "}
             {Object.keys(cart).length}
           </div>
           {src && Object.values(src).length && (
