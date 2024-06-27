@@ -55,7 +55,7 @@ export default function Task() {
         //   res[col.code] = { name: col.name, position: col.position };
         // });
         // console.log(data);
-        console.log("(2): ", res);
+        console.log("(2): ", res.data);
         setSrc(res.data);
       }
       // setObjName(res);

@@ -49,7 +49,11 @@ export default function Vendors() {
       if (res.isOk) {
         console.log(res.data);
         setSrc(res.data);
-        // let res = {};
+        let objName = {};
+        res.data.profile.columns.forEach((col) => {
+          objName[col.code] = { name: col.name, position: col.position };
+        });
+        setObjName(objName);
         res.data.profile.columns.forEach((col) => {
           res[col.code] = { name: col.name, position: col.position };
         });
@@ -70,10 +74,10 @@ export default function Vendors() {
       //   .then((data) => {
       //     setSrc(data.data);
       //     let res = {};
-      //     data.data.profile.columns.forEach((col) => {
-      //       res[col.code] = { name: col.name, position: col.position };
-      //     });
-      //     setObjName(res);
+      // data.data.profile.columns.forEach((col) => {
+      //   res[col.code] = { name: col.name, position: col.position };
+      // });
+      // setObjName(res);
       //     console.log(res);
       //     console.log(data);
       //   })
