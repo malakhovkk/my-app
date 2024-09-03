@@ -85,7 +85,7 @@ const employees = [
 
 function getLists(statusArray, taskArray) {
   const tasksMap = taskArray.reduce((result, task) => {
-    if (result[task.Task_Status]) {
+    if (true || result[task.Task_Status]) {
       result[task.Task_Status].push(task);
     } else {
       result[task.Task_Status] = [task];
@@ -183,7 +183,7 @@ function App() {
   useEffect(() => {
     async function exec() {
       const bearer =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiYWRtaW4iLCJleHAiOjE3MjUyOTE3ODIsImlzcyI6IldpbmVTZXJ2ZXIiLCJhdWQiOiJhZG1pbiJ9.CECDoQ5TXKJzffJkxwXChyPenyky5gHbvce9uGgXwAg";
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoiYWRtaW4iLCJleHAiOjE3MjUzNzE5MTcsImlzcyI6IldpbmVTZXJ2ZXIiLCJhdWQiOiJhZG1pbiJ9.5AMhjjlPTPaRdx3xolVqcNicza6KzD5NRaYxb3I54mE";
       const res = await axios("http://194.87.239.231:55555/api/deal", {
         headers: {
           User: "admin",
@@ -191,22 +191,35 @@ function App() {
         },
       });
       console.log(res);
+      console.log(
+        res.data.map((el, idx) => ({
+          Task_ID: idx,
+          Task_Assigned_Employee_ID: 1,
+          Task_Owner_ID: 1,
+          Task_Subject: el.dealName,
+          Task_Start_Date: "2015-01-01T00:00:00",
+          Task_Due_Date: "2015-04-01T00:00:00",
+          Task_Status: "отменен",
+          Task_Priority: 4,
+          Task_Completion: 100,
+          Task_Parent_ID: 0,
+        }))
+      );
       setLists(
-        getLists(
-          taskStatuses,
-          res.data.map((el, idx) => ({
-            Task_ID: idx,
-            Task_Assigned_Employee_ID: 1,
-            Task_Owner_ID: 1,
-            Task_Subject: el.dealName,
-            Task_Start_Date: "2015-01-01T00:00:00",
-            Task_Due_Date: "2015-04-01T00:00:00",
-            Task_Status: "отменен",
-            Task_Priority: 4,
-            Task_Completion: 100,
-            Task_Parent_ID: 0,
-          }))
-        )
+        // getLists(
+        //   taskStatuses,
+        res.data.map((el, idx) => ({
+          Task_ID: idx,
+          Task_Assigned_Employee_ID: 1,
+          Task_Owner_ID: 1,
+          Task_Subject: el.dealName,
+          Task_Start_Date: "2015-01-01T00:00:00",
+          Task_Due_Date: "2015-04-01T00:00:00",
+          Task_Status: "отменен",
+          Task_Priority: 4,
+          Task_Completion: 100,
+          Task_Parent_ID: 0,
+        }))
       );
     }
     exec();
@@ -264,20 +277,21 @@ function App() {
             handle=".list-title"
             onReorder={onListReorder}
           >
-            {lists.map((tasks, listIndex) => {
-              const status = statuses[listIndex];
-              return (
-                <List
-                  key={status}
-                  title={status}
-                  index={listIndex}
-                  tasks={tasks}
-                  employeesMap={employeesRecord}
-                  onTaskDrop={onTaskDrop}
-                  setPopupVisible={setPopupVisible}
-                ></List>
-              );
-            })}
+            {console.log(lists) &&
+              lists.map((tasks, listIndex) => {
+                const status = statuses[listIndex];
+                return (
+                  <List
+                    key={status}
+                    title={status}
+                    index={listIndex}
+                    tasks={tasks}
+                    employeesMap={employeesRecord}
+                    onTaskDrop={onTaskDrop}
+                    setPopupVisible={setPopupVisible}
+                  ></List>
+                );
+              })}
           </Sortable>
         </ScrollView>
       </div>
